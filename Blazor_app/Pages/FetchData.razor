@@ -1,0 +1,98 @@
+﻿@page "/fetchdata"
+
+@using Blazor_app.Data
+@inject CustomerService customerS
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+<DxDataGrid Data="@forecasts"
+            RowInserting="@((newValues) => OnRowInserting(newValues))"
+            RowUpdating="@((updatingDataItem, newValues) => OnRowUpdating(updatingDataItem, newValues))"
+            RowRemoving="@((dataItem) => OnRowDeleting(dataItem))">
+    <DxDataGridCommandColumn Width =" 150px" />
+    <DxDataGridColumn Field="@nameof(Customer_Data.grade)" />
+    <DxDataGridColumn Field="@nameof(Customer_Data.cclass)" />
+    <DxDataGridColumn Field="@nameof(Customer_Data.no)" />
+    <DxDataGridColumn Field="@nameof(Customer_Data.name)" />
+    <DxDataGridColumn Field="@nameof(Customer_Data.score)" />
+
+</DxDataGrid>
+}
+
+@code {
+    private List<Customer_Data> forecasts;
+
+    void OnRowUpdating(Customer_Data item, Dictionary<string, object> itemProperties)
+    {
+        Customer_Data tmp = new Customer_Data();
+        DeepCopy(tmp, item);
+        UpdateItem(item, itemProperties);
+        if (!customerS.Update(item))
+        {
+            DeepCopy(item, tmp);
+        }
+
+    }
+
+    void OnRowDeleting(Customer_Data item)
+    {
+        if (customerS.Delete(item))
+            forecasts.Remove(item);
+
+    }
+
+    void OnRowInserting(Dictionary<string, object> itemProperties)
+    {
+        Customer_Data item = UpdateItem(new Customer_Data(), itemProperties);
+        if(customerS.Insert(item))
+        {
+            forecasts.Add(item);
+        }
+
+    }
+
+    static Customer_Data UpdateItem(Customer_Data item, Dictionary<string, object> itemProperties)
+    {
+        foreach (var field in itemProperties.Keys)
+        {
+            switch (field)
+            {
+                case "grade":
+                    item.grade = (string)itemProperties[nameof(Customer_Data.grade)];
+                    break;
+                case "cclass":
+                    item.cclass = (string)itemProperties[nameof(Customer_Data.cclass)];
+                    break;
+                case "no":
+                    item.no = (string)itemProperties[nameof(Customer_Data.no)];
+                    break;
+                case "name":
+                    item.name = (string)itemProperties[nameof(Customer_Data.name)];
+                    break;
+                case "score":
+                    item.score = (string)itemProperties[nameof(Customer_Data.score)];
+                    break;
+
+            }
+        }
+        return item;
+    }
+
+    void DeepCopy(Customer_Data tmp, Customer_Data item)
+    {
+        tmp.grade = item.grade;
+        tmp.cclass = item.cclass;
+        tmp.no = item.no;
+        tmp.name = item.name;
+        tmp.score = item.score;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecasts = await customerS.Get();
+    }
+}
